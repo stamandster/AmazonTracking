@@ -11,8 +11,6 @@
     emptyState: document.getElementById('emptyState'),
     totalItems: document.getElementById('totalItems'),
     totalSpent: document.getElementById('totalSpent'),
-    payerSpending: document.getElementById('payerSpending'),
-    payerLabel: document.getElementById('payerLabel'),
     totalOrders: document.getElementById('totalOrders'),
     exportBtn: document.getElementById('exportBtn'),
     exportScope: document.getElementById('exportScope'),
@@ -20,12 +18,6 @@
     restoreBtn: document.getElementById('restoreBtn'),
     restoreInput: document.getElementById('restoreInput'),
     clearBtn: document.getElementById('clearBtn'),
-    settingsBtn: document.getElementById('settingsBtn'),
-    settingsModal: document.getElementById('settingsModal'),
-    closeModal: document.getElementById('closeModal'),
-    cancelSettings: document.getElementById('cancelSettings'),
-    saveSettings: document.getElementById('saveSettings'),
-    targetPayer: document.getElementById('targetPayer'),
     toast: document.getElementById('toast'),
     clearModal: document.getElementById('clearModal'),
     closeClearModal: document.getElementById('closeClearModal'),
@@ -41,7 +33,7 @@
   
   let state = {
     orders: [],
-    settings: { targetPayer: '', trackingEnabled: true },
+    settings: { trackingEnabled: true },
     searchQuery: '',
     yearFilter: [],
     cardFilter: [],
@@ -57,11 +49,10 @@
     chrome.runtime.sendMessage({ type: 'GET_DATA' }, (data) => {
       console.log('Side panel loaded orders:', (data.orders || []).length);
       state.orders = data.orders || [];
-      state.settings = data.settings || { targetPayer: '', trackingEnabled: true };
-      state.yearFilter = 'all';
-      state.cardFilter = 'all';
-      state.payerFilter = 'all';
-      elements.targetPayer.value = state.settings.targetPayer || '';
+      state.settings = data.settings || { trackingEnabled: true };
+      state.yearFilter = [];
+      state.cardFilter = [];
+      state.payerFilter = [];
       updateTrackingToggle();
       updateFilters();
       render();
@@ -172,36 +163,41 @@
         });
         multiSelect.classList.toggle('open');
       });
+    });
+    
+    document.addEventListener('change', (e) => {
+      if (!e.target.matches('.multi-select-dropdown input[type="checkbox"]')) return;
       
-      const checkboxes = multiSelect.querySelectorAll('input[type="checkbox"]');
-      checkboxes.forEach(cb => {
-        cb.addEventListener('change', () => {
-          const multiSelectId = multiSelect.id;
-          const selected = getSelectedValues(multiSelect);
-          
-          if (cb.value === 'all') {
-            if (cb.checked) {
-              checkboxes.forEach(otherCb => {
-                if (otherCb.value !== 'all') otherCb.checked = false;
-              });
-            }
-          } else {
-            const allCb = multiSelect.querySelector('input[value="all"]');
-            if (allCb) allCb.checked = false;
-          }
-          
-          if (multiSelectId === 'yearMultiSelect') {
-            state.yearFilter = getSelectedValues(multiSelect);
-          } else if (multiSelectId === 'cardMultiSelect') {
-            state.cardFilter = getSelectedValues(multiSelect);
-          } else if (multiSelectId === 'payerMultiSelect') {
-            state.payerFilter = getSelectedValues(multiSelect);
-          }
-          
-          updateMultiSelectValue(multiSelect, getSelectedValues(multiSelect));
-          render();
-        });
-      });
+      const checkbox = e.target;
+      const dropdown = checkbox.closest('.multi-select-dropdown');
+      const multiSelect = dropdown.closest('.multi-select');
+      const multiSelectId = multiSelect.id;
+      
+      const allCheckbox = dropdown.querySelector('input[value="all"]');
+      const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+      
+      if (checkbox.value === 'all') {
+        if (checkbox.checked) {
+          checkboxes.forEach(cb => {
+            if (cb.value !== 'all') cb.checked = false;
+          });
+        }
+      } else {
+        if (allCheckbox) allCheckbox.checked = false;
+      }
+      
+      const selected = getSelectedValues(multiSelect);
+      
+      if (multiSelectId === 'yearMultiSelect') {
+        state.yearFilter = selected;
+      } else if (multiSelectId === 'cardMultiSelect') {
+        state.cardFilter = selected;
+      } else if (multiSelectId === 'payerMultiSelect') {
+        state.payerFilter = selected;
+      }
+      
+      updateMultiSelectValue(multiSelect, selected);
+      render();
     });
     
     document.addEventListener('click', (e) => {
@@ -293,8 +289,7 @@
   }
   
   function renderOrder(order) {
-    const isTarget = order.payer === state.settings.targetPayer;
-    const payerClass = isTarget ? 'target' : (order.payer === 'Unknown' ? 'unknown' : '');
+    const payerClass = order.payer === 'Unknown' ? 'unknown' : '';
     
     let statusBadges = '';
     if (order.isFullyReturned) {
@@ -365,11 +360,9 @@
   
   function renderSummary() {
     const filtered = getFilteredOrders();
-    const targetPayer = state.settings.targetPayer;
     
     let totalItems = 0;
     let totalSpent = 0;
-    let payerSpent = 0;
     let orderCount = 0;
     
     filtered.forEach(order => {
@@ -386,22 +379,14 @@
         }, 0);
         
         totalSpent += parsePrice(order.total) - ignoredItemsTotal;
-        if (order.payer === targetPayer) {
-          payerSpent += parsePrice(order.total) - ignoredItemsTotal;
-        }
       } else {
         totalSpent += parsePrice(order.total);
-        if (order.payer === targetPayer) {
-          payerSpent += parsePrice(order.total);
-        }
       }
     });
     
     elements.totalItems.textContent = totalItems;
     elements.totalSpent.textContent = formatPrice(totalSpent);
-    elements.payerSpending.textContent = formatPrice(payerSpent);
     elements.totalOrders.textContent = orderCount;
-    elements.payerLabel.textContent = targetPayer ? `${targetPayer}'s Spending` : 'Your Spending';
   }
   
   function escapeHtml(str) {
@@ -610,7 +595,6 @@
             state.orders = data.orders;
             if (data.settings) {
               state.settings = { ...state.settings, ...data.settings };
-              elements.targetPayer.value = state.settings.targetPayer || '';
             }
             updateFilters();
             render();
@@ -643,28 +627,6 @@
     });
   }
   
-  function openSettings() {
-    elements.targetPayer.value = state.settings.targetPayer || '';
-    elements.settingsModal.classList.add('visible');
-  }
-  
-  function closeSettings() {
-    elements.settingsModal.classList.remove('visible');
-  }
-  
-  function saveSettings() {
-    state.settings.targetPayer = elements.targetPayer.value.trim();
-    chrome.runtime.sendMessage({
-      type: 'UPDATE_SETTINGS',
-      settings: state.settings
-    }, () => {
-      updateFilters();
-      render();
-      closeSettings();
-      showToast('Settings saved');
-    });
-  }
-  
   elements.searchInput.addEventListener('input', (e) => {
     state.searchQuery = e.target.value;
     elements.clearSearch.classList.toggle('visible', state.searchQuery.length > 0);
@@ -694,14 +656,6 @@
   elements.restoreBtn.addEventListener('click', () => elements.restoreInput.click());
   elements.restoreInput.addEventListener('change', restoreData);
   elements.clearBtn.addEventListener('click', openClearModal);
-  elements.settingsBtn.addEventListener('click', openSettings);
-  elements.closeModal.addEventListener('click', closeSettings);
-  elements.cancelSettings.addEventListener('click', closeSettings);
-  elements.saveSettings.addEventListener('click', saveSettings);
-  
-  elements.settingsModal.addEventListener('click', (e) => {
-    if (e.target === elements.settingsModal) closeSettings();
-  });
   
   elements.closeClearModal.addEventListener('click', closeClearModal);
   elements.cancelClear.addEventListener('click', closeClearModal);
@@ -738,7 +692,7 @@
             const newCount = data.orders.length;
             const oldCount = state.orders.length;
             state.orders = data.orders;
-            state.settings = data.settings || { targetPayer: '' };
+            state.settings = data.settings || { trackingEnabled: true };
             state.queueLength = data.queueLength || 0;
             updateFilters();
             render();

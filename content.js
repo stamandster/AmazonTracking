@@ -1,12 +1,42 @@
 (function() {
-  console.log('AmazonTracking:' Content script loaded');
+  console.log('AmazonTracking: Content script loaded');
   
   let trackingEnabled = true;
+  let isInitialized = false;
+  let extensionValid = true;
+  
+  function safeSendMessage(message, callback) {
+    if (!extensionValid) {
+      if (callback) callback(null);
+      return;
+    }
+    try {
+      if (!chrome || !chrome.runtime || !chrome.runtime.sendMessage) {
+        extensionValid = false;
+        if (callback) callback(null);
+        return;
+      }
+      chrome.runtime.sendMessage(message, (response) => {
+        if (chrome.runtime.lastError) {
+          extensionValid = false;
+          if (callback) callback(null);
+          return;
+        }
+        if (callback) callback(response);
+      });
+    } catch (e) {
+      extensionValid = false;
+      console.log('AmazonTracking: Extension context error');
+      if (callback) callback(null);
+    }
+  }
   
   function checkTrackingState() {
-    chrome.runtime.sendMessage({ type: 'GET_TRACKING_STATE' }, (response) => {
+    if (!extensionValid) return;
+    safeSendMessage({ type: 'GET_TRACKING_STATE' }, (response) => {
+      if (response === null) return;
       trackingEnabled = response !== false;
-      console.log('AmazonTracking:' Tracking state:', trackingEnabled ? 'enabled' : 'disabled');
+      console.log('AmazonTracking: Tracking state:', trackingEnabled ? 'enabled' : 'disabled');
     });
   }
   
@@ -29,7 +59,7 @@
     const transactions = [];
     
     const lineItems = document.querySelectorAll('.apx-transactions-line-item-component-container');
-    console.log('AmazonTracking:' Found', lineItems.length, 'line items');
+    console.log('AmazonTracking: Found', lineItems.length, 'line items');
     
     lineItems.forEach((item) => {
       const cardEl = item.querySelector('.a-span9');
@@ -98,7 +128,7 @@
       }
     });
     
-    console.log('AmazonTracking:' Parsed', transactions.length, 'transactions');
+    console.log('AmazonTracking: Parsed', transactions.length, 'transactions');
     return transactions;
   }
   
@@ -106,7 +136,7 @@
     const orders = [];
     
     const orderCards = document.querySelectorAll('.order-card');
-    console.log('AmazonTracking:' Found', orderCards.length, 'order cards');
+    console.log('AmazonTracking: Found', orderCards.length, 'order cards');
     
     orderCards.forEach(card => {
       const cardText = card.textContent?.toLowerCase() || '';
@@ -176,7 +206,7 @@
       }
     });
     
-    console.log('AmazonTracking:' Parsed', orders.length, 'orders from list page');
+    console.log('AmazonTracking: Parsed', orders.length, 'orders from list page');
     return orders;
   }
   
@@ -324,7 +354,7 @@
         status: isFullyReturned ? 'returned' : (isPartialReturn ? 'partial_return' : 'complete')
       };
     } catch (err) {
-      console.log('AmazonTracking:' Failed to fetch order details for', orderId, err);
+      console.log('AmazonTracking: Failed to fetch order details for', orderId, err);
       return null;
     }
   }
@@ -468,20 +498,16 @@
   }
   
   function sendToBackground(orders) {
-    try {
-      orders.forEach(order => {
-        chrome.runtime.sendMessage({
-          type: 'ORDER_DATA',
-          order: order
-        }, response => {
-          if (response && response.success) {
-            console.log('AmazonTracking:' Stored order', order.orderId);
-          }
-        });
+    orders.forEach(order => {
+      safeSendMessage({
+        type: 'ORDER_DATA',
+        order: order
+      }, (response) => {
+        if (response && response.success) {
+          console.log('AmazonTracking: Stored order', order.orderId);
+        }
       });
-    } catch (e) {
-      console.log('AmazonTracking:' Background communication error', e.message);
-    }
+    });
   }
   
   async function parseOrderListPageWithDetails() {
@@ -491,21 +517,19 @@
     
     const ordersNeedingDetails = orders.filter(o => !o.cardEnding || o.items.some(i => !i.price));
     
-    console.log('AmazonTracking:' Fetching details for', ordersNeedingDetails.length, 'orders');
+    console.log('AmazonTracking: Fetching details for', ordersNeedingDetails.length, 'orders');
     
     for (let i = 0; i < ordersNeedingDetails.length; i++) {
       if (!trackingEnabled) {
-        console.log('AmazonTracking:' Tracking disabled during enrichment, stopping');
+        console.log('AmazonTracking: Tracking disabled during enrichment, stopping');
         break;
       }
       const order = ordersNeedingDetails[i];
       
-      try {
-        chrome.runtime.sendMessage({
-          type: 'CAPTURE_PROGRESS',
-          message: `Querying order ${i + 1} of ${ordersNeedingDetails.length}...`
-        });
-      } catch (e) {}
+      safeSendMessage({
+        type: 'CAPTURE_PROGRESS',
+        message: 'Querying order ' + (i + 1) + ' of ' + ordersNeedingDetails.length + '...'
+      });
       
       const details = await fetchOrderDetails(order.orderId);
       if (details) {
@@ -530,7 +554,7 @@
         
         console.log('Enriched order', order.orderId, '- total:', order.total, '- card:', order.cardEnding, '- items:', order.items.length);
         
-        chrome.runtime.sendMessage({
+        safeSendMessage({
           type: 'ORDER_DATA',
           order: order
         });
@@ -539,46 +563,42 @@
       await new Promise(r => setTimeout(r, 500));
     }
     
-    try {
-      chrome.runtime.sendMessage({ type: 'CAPTURE_DONE' });
-    } catch (e) {}
+    safeSendMessage({ type: 'CAPTURE_DONE' });
     
     return orders;
   }
   
   function init() {
     if (!isOrderPage()) return;
+    if (isInitialized) return;
+    isInitialized = true;
     
     let lastCapture = 0;
     
     const capture = async () => {
       if (!trackingEnabled) {
-        console.log('AmazonTracking:' Tracking disabled, skipping capture');
+        console.log('AmazonTracking: Tracking disabled, skipping capture');
         return;
       }
       
       const now = Date.now();
       if (now - lastCapture < 2000) {
-        console.log('AmazonTracking:' Skipping capture, too soon since last');
+        console.log('AmazonTracking: Skipping capture, too soon since last');
         return;
       }
       lastCapture = now;
       
-      try {
-        chrome.runtime.sendMessage({
-          type: 'CAPTURE_START',
-          message: 'Parsing page...'
-        });
-      } catch (e) {}
+      safeSendMessage({
+        type: 'CAPTURE_START',
+        message: 'Parsing page...'
+      });
       
       const orders = await extractOrders();
-      console.log('AmazonTracking:' Captured', orders.length, 'orders');
+      console.log('AmazonTracking: Captured', orders.length, 'orders');
       if (orders.length > 0) {
         sendToBackground(orders);
       } else {
-        try {
-          chrome.runtime.sendMessage({ type: 'CAPTURE_DONE' });
-        } catch (e) {}
+        safeSendMessage({ type: 'CAPTURE_DONE' });
       }
     };
     
@@ -599,7 +619,7 @@
           text.includes('Go to') || parentText.includes('Go to') ||
           e.target.closest('[class*="nextPage"]') || e.target.closest('[class*="prevPage"]') ||
           e.target.closest('input[class*="button"]') || e.target.closest('[class*="paginate"]')) {
-        console.log('AmazonTracking:' Page navigation clicked:', text || parentText);
+        console.log('AmazonTracking: Page navigation clicked:', text || parentText);
         setTimeout(capture, 4000);
       }
     });
@@ -607,7 +627,7 @@
     const observer = new MutationObserver(() => {
       if (window.location.href !== lastHref) {
         lastHref = window.location.href;
-        console.log('AmazonTracking:' URL changed to', lastHref);
+        console.log('AmazonTracking: URL changed to', lastHref);
         setTimeout(capture, 3000);
         return;
       }
@@ -615,7 +635,7 @@
       const lineItems = document.querySelectorAll('.apx-transactions-line-item-component-container');
       if (lineItems.length !== lastOrderCount && lineItems.length > 0) {
         lastOrderCount = lineItems.length;
-        console.log('AmazonTracking:' DOM changed, re-capturing...');
+        console.log('AmazonTracking: DOM changed, re-capturing...');
         setTimeout(capture, 2000);
       }
     });
@@ -625,7 +645,7 @@
     setInterval(() => {
       if (window.location.href !== lastHref) {
         lastHref = window.location.href;
-        console.log('AmazonTracking:' URL changed (interval), re-capturing...');
+        console.log('AmazonTracking: URL changed (interval), re-capturing...');
         setTimeout(capture, 3000);
         return;
       }
@@ -633,7 +653,7 @@
       const lineItems = document.querySelectorAll('.apx-transactions-line-item-component-container');
       if (lineItems.length !== lastOrderCount && lineItems.length > 0) {
         lastOrderCount = lineItems.length;
-        console.log('AmazonTracking:' Interval detected change, re-capturing...');
+        console.log('AmazonTracking: Interval detected change, re-capturing...');
         setTimeout(capture, 2000);
       }
     }, 3000);

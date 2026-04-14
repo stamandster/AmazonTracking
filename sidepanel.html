@@ -19,7 +19,6 @@
       </div>
       <div class="header-right">
         <button class="btn btn-toggle" id="trackingToggle">Stop Tracking</button>
-        <button class="settings-btn" id="settingsBtn" title="Settings">⚙️</button>
       </div>
     </header>
 
@@ -40,7 +39,7 @@
             <label class="multi-select-option"><input type="checkbox" value="all" checked><span>All years</span></label>
           </div>
         </div>
-        <div class="multi-select" id="cardMultiSelect">
+        <div class="multi-select card-select" id="cardMultiSelect">
           <button class="multi-select-trigger" type="button">
             <span class="multi-select-label">Card:</span>
             <span class="multi-select-value">All</span>
@@ -91,10 +90,6 @@
         <span class="summary-label">Total Spent</span>
         <span class="summary-value" id="totalSpent">$0.00</span>
       </div>
-      <div class="summary-item highlight">
-        <span class="summary-label" id="payerLabel">Your Spending</span>
-        <span class="summary-value" id="payerSpending">$0.00</span>
-      </div>
       <div class="summary-item">
         <span class="summary-label">Orders</span>
         <span class="summary-value" id="totalOrders">0</span>
@@ -132,23 +127,6 @@
       </div>
     </div>
   </div>
-  </div>
-
-  <div class="modal-overlay" id="settingsModal">
-    <div class="modal">
-      <div class="modal-header">
-        <h2>Settings</h2>
-        <button class="modal-close" id="closeModal">×</button>
-      </div>
-      <div class="modal-body">
-        <label for="targetPayer">Your name (to track your spending):</label>
-        <input type="text" id="targetPayer" class="modal-input" placeholder="Enter your name">
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="cancelSettings">Cancel</button>
-        <button class="btn btn-primary" id="saveSettings">Save</button>
-      </div>
-    </div>
   </div>
 
   <div class="toast" id="toast"></div>

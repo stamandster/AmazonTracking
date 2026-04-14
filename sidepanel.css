@@ -176,7 +176,11 @@ body {
 
 .filter-row.controls-top .multi-select {
   flex: 0 1 auto;
-  min-width: 80px;
+  min-width: 100px;
+}
+
+.filter-row.controls-top .multi-select.card-select {
+  min-width: 120px;
 }
 
 .filter-row label {
@@ -193,7 +197,7 @@ body {
 .multi-select {
   position: relative;
   flex: 1;
-  min-width: 60px;
+  min-width: 80px;
 }
 
 .multi-select-trigger {

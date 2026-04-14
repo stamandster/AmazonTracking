@@ -18,9 +18,11 @@ A Chrome extension side panel that elegantly captures and tracks your Amazon ord
 - **Multi-Select Filters** - Filter by year, card, and payer simultaneously
 - **Real-Time Search** - Search across order IDs, payer names, and item descriptions
 - **Show/Hide Returns** - Toggle to include or exclude returned orders
+- **Expand/Collapse All** - Quickly expand or collapse all orders
 
 ### Data Management
 - **Start/Stop Tracking** - Toggle tracking on/off without losing data
+- **Ignore Items/Orders** - Exclude specific items or orders from totals
 - **Export to TSV** - Export filtered or all orders (tab-separated for comma-safe item names)
 - **Backup/Restore** - Export and import your complete order history as JSON
 - **Clear Data** - Remove all captured data with confirmation
@@ -49,7 +51,7 @@ A Chrome extension side panel that elegantly captures and tracks your Amazon ord
 1. Click the extension icon in Chrome's toolbar to open the side panel
 2. Navigate to your Amazon order history (`amazon.com/gp/your-orders/`)
 3. Orders are automatically captured and displayed in the panel
-4. Use filters to narrow down by year, payment card, or payer
+4. Use multi-select filters to narrow down by year, payment card, or payer
 5. Click an order to expand and see individual items
 6. Click the order ID to open the full order details on Amazon
 
@@ -58,6 +60,12 @@ A Chrome extension side panel that elegantly captures and tracks your Amazon ord
 - Click **"Stop Tracking"** button to pause capturing
 - Click **"Start Tracking"** to resume
 - Tracking state persists across sessions
+
+### Ignoring Items
+
+- Click the ✕ button next to an item to exclude it from totals
+- Click the ✕ button next to an order total to ignore the entire order
+- Use **"Clear Ignored"** to un-ignore all items at once
 
 ### Exporting Data
 
