@@ -1,12 +1,12 @@
 (function() {
-  console.log('Amazon Order Tracker: Content script loaded');
+  console.log('AmazonTracking:' Content script loaded');
   
   let trackingEnabled = true;
   
   function checkTrackingState() {
     chrome.runtime.sendMessage({ type: 'GET_TRACKING_STATE' }, (response) => {
       trackingEnabled = response !== false;
-      console.log('Amazon Order Tracker: Tracking state:', trackingEnabled ? 'enabled' : 'disabled');
+      console.log('AmazonTracking:' Tracking state:', trackingEnabled ? 'enabled' : 'disabled');
     });
   }
   
@@ -29,7 +29,7 @@
     const transactions = [];
     
     const lineItems = document.querySelectorAll('.apx-transactions-line-item-component-container');
-    console.log('Amazon Order Tracker: Found', lineItems.length, 'line items');
+    console.log('AmazonTracking:' Found', lineItems.length, 'line items');
     
     lineItems.forEach((item) => {
       const cardEl = item.querySelector('.a-span9');
@@ -98,7 +98,7 @@
       }
     });
     
-    console.log('Amazon Order Tracker: Parsed', transactions.length, 'transactions');
+    console.log('AmazonTracking:' Parsed', transactions.length, 'transactions');
     return transactions;
   }
   
@@ -106,7 +106,7 @@
     const orders = [];
     
     const orderCards = document.querySelectorAll('.order-card');
-    console.log('Amazon Order Tracker: Found', orderCards.length, 'order cards');
+    console.log('AmazonTracking:' Found', orderCards.length, 'order cards');
     
     orderCards.forEach(card => {
       const cardText = card.textContent?.toLowerCase() || '';
@@ -176,7 +176,7 @@
       }
     });
     
-    console.log('Amazon Order Tracker: Parsed', orders.length, 'orders from list page');
+    console.log('AmazonTracking:' Parsed', orders.length, 'orders from list page');
     return orders;
   }
   
@@ -324,7 +324,7 @@
         status: isFullyReturned ? 'returned' : (isPartialReturn ? 'partial_return' : 'complete')
       };
     } catch (err) {
-      console.log('Amazon Order Tracker: Failed to fetch order details for', orderId, err);
+      console.log('AmazonTracking:' Failed to fetch order details for', orderId, err);
       return null;
     }
   }
@@ -475,12 +475,12 @@
           order: order
         }, response => {
           if (response && response.success) {
-            console.log('Amazon Order Tracker: Stored order', order.orderId);
+            console.log('AmazonTracking:' Stored order', order.orderId);
           }
         });
       });
     } catch (e) {
-      console.log('Amazon Order Tracker: Background communication error', e.message);
+      console.log('AmazonTracking:' Background communication error', e.message);
     }
   }
   
@@ -491,11 +491,11 @@
     
     const ordersNeedingDetails = orders.filter(o => !o.cardEnding || o.items.some(i => !i.price));
     
-    console.log('Amazon Order Tracker: Fetching details for', ordersNeedingDetails.length, 'orders');
+    console.log('AmazonTracking:' Fetching details for', ordersNeedingDetails.length, 'orders');
     
     for (let i = 0; i < ordersNeedingDetails.length; i++) {
       if (!trackingEnabled) {
-        console.log('Amazon Order Tracker: Tracking disabled during enrichment, stopping');
+        console.log('AmazonTracking:' Tracking disabled during enrichment, stopping');
         break;
       }
       const order = ordersNeedingDetails[i];
@@ -553,13 +553,13 @@
     
     const capture = async () => {
       if (!trackingEnabled) {
-        console.log('Amazon Order Tracker: Tracking disabled, skipping capture');
+        console.log('AmazonTracking:' Tracking disabled, skipping capture');
         return;
       }
       
       const now = Date.now();
       if (now - lastCapture < 2000) {
-        console.log('Amazon Order Tracker: Skipping capture, too soon since last');
+        console.log('AmazonTracking:' Skipping capture, too soon since last');
         return;
       }
       lastCapture = now;
@@ -572,7 +572,7 @@
       } catch (e) {}
       
       const orders = await extractOrders();
-      console.log('Amazon Order Tracker: Captured', orders.length, 'orders');
+      console.log('AmazonTracking:' Captured', orders.length, 'orders');
       if (orders.length > 0) {
         sendToBackground(orders);
       } else {
@@ -599,7 +599,7 @@
           text.includes('Go to') || parentText.includes('Go to') ||
           e.target.closest('[class*="nextPage"]') || e.target.closest('[class*="prevPage"]') ||
           e.target.closest('input[class*="button"]') || e.target.closest('[class*="paginate"]')) {
-        console.log('Amazon Order Tracker: Page navigation clicked:', text || parentText);
+        console.log('AmazonTracking:' Page navigation clicked:', text || parentText);
         setTimeout(capture, 4000);
       }
     });
@@ -607,7 +607,7 @@
     const observer = new MutationObserver(() => {
       if (window.location.href !== lastHref) {
         lastHref = window.location.href;
-        console.log('Amazon Order Tracker: URL changed to', lastHref);
+        console.log('AmazonTracking:' URL changed to', lastHref);
         setTimeout(capture, 3000);
         return;
       }
@@ -615,7 +615,7 @@
       const lineItems = document.querySelectorAll('.apx-transactions-line-item-component-container');
       if (lineItems.length !== lastOrderCount && lineItems.length > 0) {
         lastOrderCount = lineItems.length;
-        console.log('Amazon Order Tracker: DOM changed, re-capturing...');
+        console.log('AmazonTracking:' DOM changed, re-capturing...');
         setTimeout(capture, 2000);
       }
     });
@@ -625,7 +625,7 @@
     setInterval(() => {
       if (window.location.href !== lastHref) {
         lastHref = window.location.href;
-        console.log('Amazon Order Tracker: URL changed (interval), re-capturing...');
+        console.log('AmazonTracking:' URL changed (interval), re-capturing...');
         setTimeout(capture, 3000);
         return;
       }
@@ -633,7 +633,7 @@
       const lineItems = document.querySelectorAll('.apx-transactions-line-item-component-container');
       if (lineItems.length !== lastOrderCount && lineItems.length > 0) {
         lastOrderCount = lineItems.length;
-        console.log('Amazon Order Tracker: Interval detected change, re-capturing...');
+        console.log('AmazonTracking:' Interval detected change, re-capturing...');
         setTimeout(capture, 2000);
       }
     }, 3000);

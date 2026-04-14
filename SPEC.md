@@ -1,4 +1,4 @@
-# Amazon Order Tracker - Chrome Extension Spec
+# AmazonTracking - Chrome Extension Spec
 
 ## Concept & Vision
 

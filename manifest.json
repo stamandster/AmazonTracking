@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Amazon Order Tracker",
+  "name": "AmazonTracking",
   "version": "1.0",
   "description": "Track Amazon orders and spending",
   "permissions": ["storage", "activeTab", "sidePanel"],
@@ -8,7 +8,7 @@
     "*://*.amazon.com/*"
   ],
   "action": {
-    "default_title": "Open Order Tracker"
+    "default_title": "AmazonTracking"
   },
   "background": {
     "service_worker": "background.js"

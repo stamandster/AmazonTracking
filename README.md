@@ -1,4 +1,4 @@
-# Amazon Order Tracker
+# AmazonTracking
 
 A Chrome extension side panel that elegantly captures and tracks your Amazon order history. Styled like Medium's clean reading experience with warm typography and thoughtful design.
 
