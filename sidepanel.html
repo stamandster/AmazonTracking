@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Tracker</title>
+  <link rel="stylesheet" href="sidepanel.css">
+</head>
+<body>
+  <div class="container">
+    <div class="capture-notification" id="captureNotification">
+      <div class="capture-spinner"></div>
+      <div class="capture-message" id="captureMessage">Capturing...</div>
+    </div>
+    <header class="header">
+      <div class="header-left">
+        <span class="logo">📦</span>
+        <h1>Order Tracker</h1>
+      </div>
+      <div class="header-right">
+        <button class="btn btn-toggle" id="trackingToggle">Stop Tracking</button>
+        <button class="settings-btn" id="settingsBtn" title="Settings">⚙️</button>
+      </div>
+    </header>
+
+    <div class="controls">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search items...">
+        <button class="clear-search" id="clearSearch">×</button>
+      </div>
+      <div class="filter-row controls-top">
+        <div class="multi-select" id="yearMultiSelect">
+          <button class="multi-select-trigger" type="button">
+            <span class="multi-select-label">Year:</span>
+            <span class="multi-select-value">All</span>
+            <span class="multi-select-arrow">▼</span>
+          </button>
+          <div class="multi-select-dropdown">
+            <label class="multi-select-option"><input type="checkbox" value="all" checked><span>All years</span></label>
+          </div>
+        </div>
+        <div class="multi-select" id="cardMultiSelect">
+          <button class="multi-select-trigger" type="button">
+            <span class="multi-select-label">Card:</span>
+            <span class="multi-select-value">All</span>
+            <span class="multi-select-arrow">▼</span>
+          </button>
+          <div class="multi-select-dropdown">
+            <label class="multi-select-option"><input type="checkbox" value="all" checked><span>All cards</span></label>
+          </div>
+        </div>
+        <div class="view-actions">
+          <button class="btn-text" id="expandAll" title="Expand all orders">⬇️ All</button>
+          <button class="btn-text" id="collapseAll" title="Collapse all orders">⬆️ All</button>
+          <button class="btn-text" id="clearIgnored" title="Un-ignore all items">Clear Ignored</button>
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="multi-select" id="payerMultiSelect">
+          <button class="multi-select-trigger" type="button">
+            <span class="multi-select-label">Payer:</span>
+            <span class="multi-select-value">All</span>
+            <span class="multi-select-arrow">▼</span>
+          </button>
+          <div class="multi-select-dropdown">
+            <label class="multi-select-option"><input type="checkbox" value="all" checked><span>All payers</span></label>
+          </div>
+        </div>
+        <label class="checkbox-label">
+          <input type="checkbox" id="showReturns" checked>
+          Show returns
+        </label>
+      </div>
+    </div>
+
+    <div class="orders-container" id="ordersContainer">
+      <div class="empty-state" id="emptyState">
+        <p>No orders captured yet.</p>
+        <p class="hint">Navigate to your Amazon order history page to start tracking.</p>
+      </div>
+      <div class="orders-list" id="ordersList"></div>
+    </div>
+
+    <div class="summary" id="summary">
+      <div class="summary-item">
+        <span class="summary-label">Total Items</span>
+        <span class="summary-value" id="totalItems">0</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Total Spent</span>
+        <span class="summary-value" id="totalSpent">$0.00</span>
+      </div>
+      <div class="summary-item highlight">
+        <span class="summary-label" id="payerLabel">Your Spending</span>
+        <span class="summary-value" id="payerSpending">$0.00</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Orders</span>
+        <span class="summary-value" id="totalOrders">0</span>
+      </div>
+    </div>
+
+  <div class="actions">
+    <div class="export-group">
+      <select id="exportScope" class="filter-select">
+        <option value="filtered">Filtered</option>
+        <option value="all">All Orders</option>
+      </select>
+      <button class="btn btn-secondary" id="exportBtn">Export TSV</button>
+    </div>
+    <div class="export-group">
+      <button class="btn btn-secondary" id="backupBtn" title="Backup to file">📥 Backup</button>
+      <button class="btn btn-secondary" id="restoreBtn" title="Restore from file">📤 Restore</button>
+      <input type="file" id="restoreInput" accept=".json" style="display:none">
+    </div>
+    <button class="btn btn-danger" id="clearBtn">Clear Data</button>
+  </div>
+
+  <div class="modal-overlay" id="clearModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Clear All Data</h2>
+        <button class="modal-close" id="closeClearModal">×</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to clear all captured orders? This cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelClear">Cancel</button>
+        <button class="btn btn-danger" id="confirmClear">Clear All</button>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="modal-close" id="closeModal">×</button>
+      </div>
+      <div class="modal-body">
+        <label for="targetPayer">Your name (to track your spending):</label>
+        <input type="text" id="targetPayer" class="modal-input" placeholder="Enter your name">
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelSettings">Cancel</button>
+        <button class="btn btn-primary" id="saveSettings">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>
