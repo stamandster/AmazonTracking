@@ -114,6 +114,14 @@ AmazonOrders/
 
 Contributions welcome! Please feel free to submit issues or pull requests.
 
+## Disclaimer
+
+**This extension is provided "as is" without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement.**
+
+**No Support:** Support is not guaranteed. Bug reports and feature requests may or may not be addressed. Pull requests are welcome but there is no obligation to merge them.
+
+**Use at your own risk:** This extension reads data from Amazon.com web pages. Amazon's page structure may change at any time, which could cause the extension to stop working or produce incorrect data. Always verify important information directly on Amazon.com.
+
 ## License
 
 MIT License - see repository for details
